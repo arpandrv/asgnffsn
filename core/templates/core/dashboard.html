@@ -1,0 +1,505 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block heading %}{# No main heading here #}{% endblock %}
+
+{% block head_extra %}
+<style>
+  /* Card Styling */
+  .stat-card {
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border-left: 4px solid #6c757d;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 1rem;
+    height: 100%;
+  }
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  }
+  .stat-card.farm-card {
+    border-left-color: #28a745;
+  }
+  .stat-card.activity-card {
+    border-left-color: #007bff;
+  }
+  .stat-card.due-card {
+    border-left-color: #dc3545;
+  }
+  .stat-icon {
+    font-size: 2.5rem;
+    opacity: 0.2;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+
+  /* Badges and Highlights */
+  .priority-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 50px;
+    font-weight: 500;
+    display: inline-block;
+    margin-top: 0.5rem;
+    white-space: normal;
+    text-align: center;
+  }
+  .action-item {
+    transition: background-color 0.2s ease;
+  }
+  .action-item:hover {
+    background-color: rgba(0,0,0,0.03);
+  }
+
+  /* Table and List Styling */
+  .record-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  .record-row:hover {
+    background-color: rgba(0,0,0,0.03);
+  }
+
+  /* Welcome Banner */
+  .dashboard-welcome {
+    background: linear-gradient(135deg, #c3e6cb, #d4edda);
+    border-left: 5px solid #28a745;
+    border-radius: 0.5rem;
+  }
+
+  /* Seasonal Indicators */
+  .season-indicator {
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(to right, #28a745 0%, #ffc107 50%, #dc3545 100%);
+    margin-top: 8px;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .season-marker {
+    width: 12px;
+    height: 12px;
+    background-color: #007bff;
+    border: 2px solid white;
+    border-radius: 50%;
+    position: relative;
+    top: -10px;
+    margin-left: -6px;
+  }
+
+  /* Enhanced Cards */
+  .enhanced-card {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    height: 100%;
+  }
+
+  .enhanced-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  }
+
+  .enhanced-card .card-header {
+    background: white;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    font-weight: 500;
+  }
+
+  /* Fixed height for recent surveillance to prevent excessive scrolling */
+  .recent-surveillance-container {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  /* Mobile Optimizations */
+  @media (max-width: 767.98px) {
+    .dashboard-welcome {
+      padding: 12px;
+      font-size: 0.9rem;
+    }
+
+    .card-body {
+      padding: 1rem;
+    }
+
+    .priority-badge {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
+    }
+
+    .table {
+      font-size: 0.85rem;
+    }
+
+    .table td, .table th {
+      padding: 0.5rem;
+    }
+
+    .btn-sm {
+      padding: 0.375rem 0.75rem; /* Larger touch target */
+      font-size: 0.8rem;
+    }
+
+    h3 {
+      font-size: 1.5rem;
+    }
+
+    h5 {
+      font-size: 1.1rem;
+    }
+
+    h6 {
+      font-size: 0.9rem;
+    }
+
+    .small {
+      font-size: 0.8rem; /* Slightly larger for readability */
+    }
+
+    /* Hide less important columns on mobile */
+    .mobile-hide {
+      display: none;
+    }
+
+    /* Adapt layout for small screens */
+    .action-btn-container {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+    }
+
+    /* Make badges and buttons more touch-friendly */
+    .btn, .badge {
+      padding: 0.5rem 0.75rem; /* Larger touch target */
+      margin-bottom: 0.25rem;
+    }
+
+    /* Increase spacing for mobile */
+    .row.g-3 {
+      --bs-gutter-y: 1rem;
+    }
+
+    /* Better mobile spacing in tables */
+    .table tr td {
+      vertical-align: middle;
+    }
+
+    /* Ensure proper spacing for alerts */
+    .alert {
+      padding: 0.75rem;
+    }
+  }
+
+  /* Tablet Optimizations */
+  @media (min-width: 768px) and (max-width: 991.98px) {
+    .row.g-4 {
+      --bs-gutter-y: 1.5rem;
+    }
+
+    .enhanced-card {
+      margin-bottom: 1.5rem;
+    }
+  }
+
+  /* Animation for the welcome banner */
+  @keyframes slideInFromLeft {
+    0% {
+      transform: translateX(-10%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .dashboard-welcome {
+    animation: 0.5s ease-out 0s 1 slideInFromLeft;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Banner -->
+<div class="alert dashboard-welcome d-flex align-items-center mb-4" role="alert">
+  <i class="bi bi-tree-fill me-3 fs-4"></i>
+  <div>
+    <strong>Welcome, {{ grower.user.username }}!</strong>
+    <span class="d-none d-md-inline"> Your mango surveillance dashboard provides a real-time overview of your farms and monitoring activities.</span>
+  </div>
+</div>
+
+<!-- Dashboard Spacing -->
+<div class="mb-4"></div>
+
+<!-- Summary Statistics Cards -->
+<div class="row g-3 mb-4" id="summary-stats">
+    <div class="col-lg-4 col-md-6">
+        <div class="card stat-card farm-card h-100 border-0">
+            <div class="card-body position-relative">
+                <i class="bi bi-tree stat-icon text-success"></i>
+                <h6 class="text-muted mb-2">Farms Managed</h6>
+                <div class="d-flex align-items-baseline">
+                    <h3 class="mb-0 me-2">{{ grower.farms.count }}</h3>
+                    <small class="text-muted">properties</small>
+                </div>
+                <p class="card-text mt-2">
+                    {% if total_plants %}
+                        <span class="text-success">{{ total_plants }}</span> total plants under surveillance
+                    {% else %}
+                        Add size details to track plant inventory
+                    {% endif %}
+                </p>
+                <div class="mt-3">
+                    <a href="{% url 'core:myfarms' %}" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-arrow-right me-1"></i> Manage Farms
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-6">
+        <div class="card stat-card activity-card h-100 border-0">
+            <div class="card-body position-relative">
+                <i class="bi bi-clipboard-data stat-icon text-primary"></i>
+                <h6 class="text-muted mb-2">Surveillance Activity</h6>
+                <div class="d-flex align-items-baseline">
+                    <h3 class="mb-0 me-2">{{ surveillance_count|default:"0" }}</h3>
+                    <small class="text-muted">records</small>
+                </div>
+                <p class="card-text mt-2">
+                    {% if latest_record %}
+                        Latest: <span class="text-primary">{{ latest_record.end_time|date:"M j, Y" }}</span>
+                    {% else %}
+                        No surveillance recorded yet
+                    {% endif %}
+                </p>
+                <div class="mt-3">
+                    <a href="{% url 'core:record_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-arrow-right me-1"></i> View History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-6">
+        <div class="card stat-card due-card h-100 border-0">
+            <div class="card-body position-relative">
+                <i class="bi bi-calendar-check stat-icon text-danger"></i>
+                <h6 class="text-muted mb-2">Due For Surveillance</h6>
+                <div class="d-flex align-items-baseline">
+                    <h3 class="mb-0 me-2">{{ due_farms_count|default:"0" }}</h3>
+                    <small class="text-muted">farm{{ due_farms_count|pluralize }}</small>
+                </div>
+                <p class="card-text mt-2">
+                    {% if due_farms_count > 0 %}
+                        <span class="text-danger">Action needed</span> - check farms soon
+                    {% else %}
+                        All farms have been recently checked
+                    {% endif %}
+                </p>
+                <div class="mt-3">
+                    <a href="{% url 'core:myfarms' %}" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-arrow-right me-1"></i> Check Farms
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Seasonal Information Card -->
+<div class="card mb-4 enhanced-card" style="border-left: 4px solid #ffc107 !important;">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-cloud-sun me-2 text-warning"></i>Current Season & Monitoring
+            </h5>
+            <span class="badge bg-info text-dark">{{ season_label }}</span>
+        </div>
+        
+        <div class="row align-items-center">
+            <div class="col-lg-4 col-md-6">
+                <h6 class="text-muted">Current Season:</h6>
+                <h4 class="mb-0 text-break">{{ current_season }}</h4>
+                
+                {% if 'Wet' in current_season or 'Late Fruit' in current_season %}
+                <span class="priority-badge bg-danger bg-opacity-10 text-danger mt-2 d-inline-block">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>High Priority Monitoring
+                </span>
+                {% elif 'Flowering' in current_season %}
+                <span class="priority-badge bg-warning bg-opacity-10 text-warning mt-2 d-inline-block">
+                    <i class="bi bi-exclamation-circle-fill me-1"></i>Medium Priority Monitoring
+                </span>
+                {% elif 'Early Fruit' in current_season %}
+                <span class="priority-badge bg-warning bg-opacity-10 text-warning mt-2 d-inline-block">
+                    <i class="bi bi-exclamation-circle-fill me-1"></i>Medium-High Priority Monitoring
+                </span>
+                {% else %}
+                <span class="priority-badge bg-success bg-opacity-10 text-success mt-2 d-inline-block">
+                    <i class="bi bi-info-circle-fill me-1"></i>Regular Monitoring
+                </span>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-8">
+                <h6 class="text-muted mb-2">Annual Surveillance Cycle:</h6>
+                <div class="season-indicator"></div>
+                <div class="d-flex justify-content-between">
+                    <span class="small text-muted">Jan</span>
+                    <span class="small text-muted">Mar</span>
+                    <span class="small text-muted">Jun</span>
+                    <span class="small text-muted">Sep</span>
+                    <span class="small text-muted">Dec</span>
+                </div>
+                
+                <!-- Season marker position -->
+                {% now "m" as current_month_num %}
+                {% if current_month_num == "01" or current_month_num == "02" %}
+                    <div style="margin-left: 8%;"><div class="season-marker"></div></div>
+                {% elif current_month_num == "03" or current_month_num == "04" %}
+                    <div style="margin-left: 25%;"><div class="season-marker"></div></div>
+                {% elif current_month_num == "05" or current_month_num == "06" %}
+                    <div style="margin-left: 42%;"><div class="season-marker"></div></div>
+                {% elif current_month_num == "07" or current_month_num == "08" %}
+                    <div style="margin-left: 58%;"><div class="season-marker"></div></div>
+                {% elif current_month_num == "09" or current_month_num == "10" %}
+                    <div style="margin-left: 75%;"><div class="season-marker"></div></div>
+                {% else %}
+                    <div style="margin-left: 92%;"><div class="season-marker"></div></div>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <p class="small">
+                        {% if seasonal_info.pest_names or seasonal_info.disease_names %}
+                            {% if 'Wet' in current_season %}
+                            <i class="bi bi-droplet-fill text-primary me-1"></i>During {{ current_season|lower }}, focus on:
+                            {% elif 'Flowering' in current_season %}
+                            <i class="bi bi-flower1 text-warning me-1"></i>During {{ current_season|lower }}, focus on:
+                            {% elif 'Fruit' in current_season %}
+                            <i class="bi bi-tree-fill text-success me-1"></i>During {{ current_season|lower }}, focus on:
+                            {% else %}
+                            <i class="bi bi-sun text-warning me-1"></i>During {{ current_season|lower }}, focus on:
+                            {% endif %}
+                        
+                            {% if seasonal_info.pest_names %}
+                            <br><strong>Pests:</strong> 
+                            {% for pest in seasonal_info.pest_names %}
+                                {% if not forloop.first %}{% if forloop.last %} and {% else %}, {% endif %}{% endif %}{{ pest }}
+                            {% endfor %}
+                            {% endif %}
+                            
+                            {% if seasonal_info.disease_names %}
+                            <br><strong>Diseases:</strong> 
+                            {% for disease in seasonal_info.disease_names %}
+                                {% if not forloop.first %}{% if forloop.last %} and {% else %}, {% endif %}{% endif %}{{ disease }}
+                            {% endfor %}
+                            {% endif %}
+                            
+                            {% if seasonal_info.part_names %}
+                            <br><strong>Check Plant Parts:</strong> 
+                            {% for part in seasonal_info.part_names %}
+                                {% if not forloop.first %}{% if forloop.last %} and {% else %}, {% endif %}{% endif %}{{ part }}
+                            {% endfor %}
+                            {% endif %}
+                        {% else %}
+                            <i class="bi bi-info-circle text-info me-1"></i>No specific pests or diseases are prioritized for this period. Continue regular monitoring practices.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Area -->
+<div class="row g-4 mb-4">
+    <!-- Recent Activity Section -->
+    <div class="col-12">
+        <div class="card enhanced-card" style="border-left: 4px solid #28a745 !important;">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-clipboard-check me-2 text-success"></i>Recent Surveillance
+                </h5>
+                <a href="{% url 'core:record_list' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-list me-1"></i>View All
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_records %}
+                <div class="recent-surveillance-container">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Farm</th>
+                                    <th class="mobile-hide">Plants</th>
+                                    <th>Status</th>
+                                    <th class="mobile-hide">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in recent_records %}
+                                <tr class="record-row">
+                                    <td>
+                                        <strong>{{ record.end_time|date:"M j" }}</strong>
+                                        <div class="small text-muted">{{ record.end_time|date:"Y" }}</div>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'core:farm_detail' record.farm.id %}" class="text-decoration-none fw-medium">
+                                            {{ record.farm.name }}
+                                        </a>
+                                    </td>
+                                    <td class="mobile-hide">
+                                        <span class="badge bg-light text-dark">
+                                            {{ record.observation_count }} plants
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if record.get_unique_pests.exists or record.get_unique_diseases.exists %}
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-bug me-1"></i>Issues Found
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i>All Clear
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="mobile-hide">
+                                        <a href="{% url 'core:survey_session_detail' record.session_id %}" class="btn btn-sm btn-outline-info">
+                                            <i class="bi bi-eye me-1"></i>View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% else %}
+                <div class="p-5 text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-journal-x text-muted" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="text-muted">No surveillance records yet</h5>
+                    <p class="text-muted mb-4">Begin monitoring your farms to track pest and disease presence.</p>
+                    <a href="{% url 'core:myfarms' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i> Record First Surveillance
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
