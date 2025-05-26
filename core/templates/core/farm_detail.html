@@ -38,12 +38,13 @@
     .mobile-sticky-actions {
       position: sticky;
       bottom: 0;
-      background-color: rgba(255, 255, 255, 0.9);
+      background-color: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(10px);
       padding: 0.75rem;
       margin: 0 -1rem -1rem -1rem;
       border-top: 1px solid rgba(0, 0, 0, 0.1);
       z-index: 1000;
+      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
     }
 
     /* Improved buttons for mobile */
@@ -67,15 +68,9 @@
         <div class="d-none d-md-flex">
             <!-- Toggle Boundary Map Button -->
             <button type="button" class="btn btn-light btn-sm me-2" id="toggleMapBtn" {% if not farm_boundary_json %}disabled{% endif %}>
-                <i class="bi bi-map me-1"></i> {% if farm_boundary_json %}Show/Hide{% else %}No{% endif %} Boundary Map
+                <i class="bi bi-map me-1"></i> 
+                {% if farm_boundary_json %}Toggle Map{% else %}No Boundary Map{% endif %}
             </button>
-
-            <!-- Generate Mapping Link Button -->
-            {% if not farm.boundary %}
-            <a href="{% url 'core:generate_mapping_link' farm_id=farm.id %}" class="btn btn-warning btn-sm me-2">
-                <i class="bi bi-qr-code me-1"></i> Generate Mapping Link
-            </a>
-            {% endif %}
 
             <a href="{% url 'core:edit_farm' farm.id %}" class="btn btn-light btn-sm">
                 <i class="bi bi-pencil-square me-1"></i> Edit Farm
@@ -87,12 +82,6 @@
             <button type="button" class="btn btn-light btn-sm flex-grow-1" id="mobileToggleMapBtn" {% if not farm_boundary_json %}disabled{% endif %}>
                 <i class="bi bi-map me-1"></i> Map
             </button>
-
-            {% if not farm.boundary %}
-            <a href="{% url 'core:generate_mapping_link' farm_id=farm.id %}" class="btn btn-warning btn-sm flex-grow-1">
-                <i class="bi bi-qr-code me-1"></i> Mapping Link
-            </a>
-            {% endif %}
 
             <a href="{% url 'core:edit_farm' farm.id %}" class="btn btn-light btn-sm flex-grow-1">
                 <i class="bi bi-pencil-square me-1"></i> Edit
@@ -175,9 +164,23 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <div class="col-12">
+                        <div class="card h-100 farm-stat-card">
+                            <div class="card-body p-3">
+                                <h6 class="card-subtitle mb-1 text-muted">Address</h6>
+                                <p class="card-text mb-0 fw-medium">
+                                    {{ farm.formatted_address|default:"Not set" }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        {# TODO: Display recent sessions or in-progress session info here if needed #}
+        {# completed_sessions and latest_in_progress are available in context #}
     </div>
 </div>
 
@@ -264,6 +267,8 @@
                                 {{ pest.name }}
                                 <span class="badge bg-danger rounded-pill">Check</span>
                             </li>
+                        {% empty %}
+                            <li class="list-group-item text-muted small">No specific priority pests for this stage/plant type.</li>
                         {% endfor %}
                     </ul>
 
@@ -432,10 +437,18 @@
 
 <!-- Mobile Sticky Action Bar -->
 <div class="d-block d-md-none mobile-sticky-actions">
-    <a href="{% url 'core:start_survey_session' farm.id %}" class="btn btn-primary w-100">
-        <i class="bi bi-play-circle me-1"></i> Start New Survey Session
-    </a>
+    <div class="d-flex gap-2">
+        <a href="{% url 'core:start_survey_session' farm.id %}" class="btn btn-primary flex-grow-1">
+            <i class="bi bi-play-circle me-1"></i> Start Survey
+        </a>
+        <a href="{% url 'core:survey_session_list' farm.id %}" class="btn btn-outline-secondary">
+            <i class="bi bi-list-ul"></i>
+        </a>
+    </div>
 </div>
+
+{# Safely pass JSON data to JavaScript #}
+{{ farm_boundary_json|json_script:"farm-boundary-data" }}
 
 {% endblock %}
 
@@ -446,20 +459,38 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const boundaryData = {{ farm_boundary_json|safe|default:"null" }};
+    // Safely parse boundary data
+    const boundaryDataElement = document.getElementById('farm-boundary-data');
+    const boundaryData = boundaryDataElement ? JSON.parse(boundaryDataElement.textContent) : null;
+    
     const mapContainer = document.getElementById('mapContainer');
     const toggleMapBtn = document.getElementById('toggleMapBtn');
     const mobileToggleMapBtn = document.getElementById('mobileToggleMapBtn');
     const recenterMapBtn = document.getElementById('recenterMapBtn');
     let map = null;
     let boundaryLayer = null;
+    let mapVisible = false;
+
+    // Helper function to update button text
+    function updateButtonText(isVisible) {
+        if (toggleMapBtn) {
+            toggleMapBtn.innerHTML = isVisible ? 
+                '<i class="bi bi-map-fill me-1"></i> Hide Map' : 
+                '<i class="bi bi-map me-1"></i> Show Map';
+        }
+        if (mobileToggleMapBtn) {
+            mobileToggleMapBtn.innerHTML = isVisible ? 
+                '<i class="bi bi-map-fill me-1"></i> Hide' : 
+                '<i class="bi bi-map me-1"></i> Map';
+        }
+    }
 
     // Helper function to toggle map
     function toggleMap() {
-        const isHidden = mapContainer.style.display === 'none';
-        mapContainer.style.display = isHidden ? 'block' : 'none';
+        mapVisible = !mapVisible;
+        mapContainer.style.display = mapVisible ? 'block' : 'none';
 
-        if (isHidden && !map) {
+        if (mapVisible && !map) {
             console.log("Initializing Leaflet map.");
             try {
                 map = L.map('map').setView([-12.46, 130.84], 10);
@@ -488,23 +519,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     map.setMinZoom(map.getBoundsZoom(paddedBounds));
                     console.log("Map bounds restricted, minZoom set to padded bounds view.");
 
-                    // Show and Enable Recenter Button
+                    // Show Recenter Button
                     recenterMapBtn.style.display = 'block';
-                    recenterMapBtn.addEventListener('click', function() {
-                        console.log("Recenter button clicked.");
-                        if (map && boundaryLayer && boundaryLayer.getBounds().isValid()) {
-                            map.fitBounds(boundaryLayer.getBounds().pad(0.1));
-                        }
-                    });
-
                 } else {
                     console.warn("Boundary layer bounds are not valid, cannot fit map or set maxBounds.");
                     recenterMapBtn.style.display = 'none';
-                }
-
-                toggleMapBtn.innerHTML = '<i class="bi bi-map-fill me-1"></i> Hide Boundary Map';
-                if (mobileToggleMapBtn) {
-                    mobileToggleMapBtn.innerHTML = '<i class="bi bi-map-fill me-1"></i> Hide Map';
                 }
 
             } catch (e) {
@@ -512,23 +531,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 mapContainer.innerHTML = '<div class="alert alert-danger">Could not load map boundary.</div>';
                 recenterMapBtn.style.display = 'none';
             }
-        } else if (isHidden && map) {
-            map.invalidateSize();
-            if (boundaryLayer && boundaryLayer.getBounds().isValid()){
+        } else if (mapVisible && map) {
+            // Map already initialized, just refresh size
+            setTimeout(() => {
+                map.invalidateSize();
+                if (boundaryLayer && boundaryLayer.getBounds().isValid()){
+                    map.fitBounds(boundaryLayer.getBounds().pad(0.1));
+                }
+            }, 100);
+        }
+
+        updateButtonText(mapVisible);
+        recenterMapBtn.style.display = mapVisible ? 'block' : 'none';
+    }
+
+    // Recenter button handler
+    if (recenterMapBtn) {
+        recenterMapBtn.addEventListener('click', function() {
+            console.log("Recenter button clicked.");
+            if (map && boundaryLayer && boundaryLayer.getBounds().isValid()) {
                 map.fitBounds(boundaryLayer.getBounds().pad(0.1));
             }
-            toggleMapBtn.innerHTML = '<i class="bi bi-map-fill me-1"></i> Hide Boundary Map';
-            if (mobileToggleMapBtn) {
-                mobileToggleMapBtn.innerHTML = '<i class="bi bi-map-fill me-1"></i> Hide Map';
-            }
-            recenterMapBtn.style.display = 'block';
-        } else {
-            toggleMapBtn.innerHTML = '<i class="bi bi-map me-1"></i> Show Boundary Map';
-            if (mobileToggleMapBtn) {
-                mobileToggleMapBtn.innerHTML = '<i class="bi bi-map me-1"></i> Show Map';
-            }
-            recenterMapBtn.style.display = 'none';
-        }
+        });
     }
 
     // Setup event listeners
@@ -542,14 +566,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     } else {
         console.log("No boundary data found or map buttons missing.");
-        if (toggleMapBtn) toggleMapBtn.disabled = true;
-        if (mobileToggleMapBtn) mobileToggleMapBtn.disabled = true;
+        if (toggleMapBtn) {
+            toggleMapBtn.disabled = true;
+            toggleMapBtn.innerHTML = '<i class="bi bi-map me-1"></i> No Boundary Map';
+        }
+        if (mobileToggleMapBtn) {
+            mobileToggleMapBtn.disabled = true;
+            mobileToggleMapBtn.innerHTML = '<i class="bi bi-map me-1"></i> No Map';
+        }
     }
 
     // Handle orientation change on mobile
     window.addEventListener('orientationchange', function() {
         setTimeout(function() {
-            if (map) {
+            if (map && mapVisible) {
                 map.invalidateSize();
                 if (boundaryLayer && boundaryLayer.getBounds().isValid()){
                     map.fitBounds(boundaryLayer.getBounds().pad(0.1));
