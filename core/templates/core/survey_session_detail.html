@@ -1,0 +1,165 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Survey Details: {{ farm.name }} ({{ session.start_time|date:"M j, Y" }}){% endblock %}
+
+{% block heading %}Survey Session Details{% endblock %}
+
+{% block head_extra %}
+<style>
+  .observation-card {
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(0,0,0,0.125);
+  }
+  .observation-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+
+  .stat-card {
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background-color: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+    transition: all 0.2s ease;
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  .stat-card h6 { color: #6c757d; font-size: 0.8rem; margin-bottom: 4px; }
+  .stat-card p { font-weight: 600; font-size: 1.1rem; margin-bottom: 0; }
+
+  .session-tabs .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #6c757d;
+    border-radius: 0;
+    padding: 0.5rem 0.25rem;
+    margin-right: 1rem;
+    font-weight: 500;
+  }
+  .session-tabs .nav-link.active {
+    color: #0d6efd;
+    border-bottom: 3px solid #0d6efd;
+    background-color: transparent;
+  }
+
+  @media (max-width: 767.98px) {
+    .mobile-sticky-actions {
+      position: sticky;
+      bottom: 0;
+      background-color: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      padding: 0.75rem;
+      margin: 0 -1rem -1rem -1rem;
+      border-top: 1px solid rgba(0,0,0,0.1);
+      z-index: 100;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+    }
+  }
+</style>
+{% endblock head_extra %}
+
+{% block content %}
+<div class="d-block d-md-none mb-3">
+    <h5 class="fw-bold mb-1">{{ session.start_time|date:"M j, Y" }}</h5>
+    <p class="mb-1">
+        <a href="{% url 'core:farm_detail' farm.id %}" class="text-decoration-none">
+            <i class="bi bi-house-door me-1"></i> {{ farm.name }}
+        </a>
+    </p>
+    <div class="d-flex align-items-center mt-2">
+        <span class="badge bg-{{ session.get_status_badge_class }} me-2">{{ session.get_status_display }}</span>
+        <span class="text-muted small">by {{ session.surveyor.username }}</span>
+    </div>
+</div>
+
+<div class="d-block d-md-none mb-3">
+    <ul class="nav session-tabs" id="sessionTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="summary-tab-mobile" data-bs-toggle="tab" data-bs-target="#summary-mobile" type="button" role="tab">
+                <i class="bi bi-clipboard-data me-1"></i> Summary
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="observations-tab-mobile" data-bs-toggle="tab" data-bs-target="#observations-mobile" type="button" role="tab">
+                <i class="bi bi-binoculars me-1"></i> Observations ({{ completed_count }})
+            </button>
+        </li>
+    </ul>
+</div>
+
+<div class="d-block d-md-none">
+    <div class="tab-content" id="sessionTabContentMobile">
+        <div class="tab-pane fade show active" id="summary-mobile" role="tabpanel">
+            {% include "core/partials/survey_session_summary_content.html" %}
+        </div>
+
+        <div class="tab-pane fade" id="observations-mobile" role="tabpanel">
+            {% include "core/partials/survey_session_observations_list.html" %}
+        </div>
+    </div>
+</div>
+
+<div class="d-none d-md-block">
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary bg-gradient text-white d-flex justify-content-between align-items-center">
+            <div><i class="bi bi-clipboard-data me-1"></i> Session Summary</div>
+            <div><span class="badge bg-light text-primary">{{ session.start_time|date:"F j, Y" }}</span></div>
+        </div>
+        <div class="card-body">
+            {% include "core/partials/survey_session_summary_content.html" %}
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div><i class="bi bi-binoculars me-1"></i> Observations Recorded</div>
+            <div><span class="badge bg-primary">{{ completed_count }} Total</span></div>
+        </div>
+        <div class="card-body">
+             {% include "core/partials/survey_session_observations_list.html" %}
+        </div>
+    </div>
+</div>
+
+<div class="d-none d-md-flex justify-content-between align-items-center">
+    <a href="{% url 'core:survey_session_list' farm.id %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back to Session List
+    </a>
+    <div>
+        <a href="{% url 'core:start_survey_session' farm.id %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> New Survey Session
+        </a>
+        <a href="{% url 'core:survey_session_pdf' session.session_id %}" class="btn btn-outline-info ms-2" target="_blank" title="Download PDF Report">
+            <i class="bi bi-file-earmark-pdf me-1"></i> Download Report
+        </a>
+    </div>
+</div>
+
+<div class="d-block d-md-none mobile-sticky-actions">
+    <div class="d-flex gap-2">
+        <a href="{% url 'core:survey_session_list' farm.id %}" class="btn btn-outline-secondary flex-grow-1">
+            <i class="bi bi-list me-1"></i> All Sessions
+        </a>
+        <a href="{% url 'core:survey_session_pdf' session.session_id %}" class="btn btn-outline-info flex-grow-1" target="_blank">
+            <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+        </a>
+    </div>
+     <a href="{% url 'core:start_survey_session' farm.id %}" class="btn btn-primary w-100 mt-2">
+        <i class="bi bi-plus-circle me-1"></i> New Session
+    </a>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Survey session detail page loaded.");
+});
+</script>
+{% endblock extra_js %}

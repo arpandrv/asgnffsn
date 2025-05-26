@@ -1,0 +1,36 @@
+{% if observations %}
+    {% for obs in observations %}
+        <div class="card observation-card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12"> {# Was col-md-8, now full width as no image column #}
+                        <h6 class="card-title">
+                            <span class="badge bg-light text-dark me-2">Plant #{{ obs.plant_sequence_number|default:forloop.counter }}</span>
+                            Observation at {{ obs.observation_time|date:"P" }}
+                        </h6>
+                        {# GPS data removed from here as per plan #}
+                        <p class="card-text mb-1">
+                            <strong>Pests:</strong> 
+                            {% for p in obs.pests_observed.all %}<span class="badge bg-danger me-1">{{ p.name }}</span>{% empty %}<span class="text-muted">None</span>{% endfor %}
+                        </p>
+                        <p class="card-text mb-1">
+                            <strong>Diseases:</strong> 
+                            {% for d in obs.diseases_observed.all %}<span class="badge bg-warning text-dark me-1">{{ d.name }}</span>{% empty %}<span class="text-muted">None</span>{% endfor %}
+                        </p>
+                        {% if obs.notes %}
+                        <div class="card-text mt-2 bg-light p-2 rounded">
+                            <strong class="small">Notes:</strong>
+                            <div class="small mt-1">{{ obs.notes|linebreaksbr }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {# REMOVED: col-md-4 for image display #}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-1"></i> No observations were recorded in this session.
+    </div>
+{% endif %}
