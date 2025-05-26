@@ -1,0 +1,506 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Survey Details: {{ farm.name }} ({{ session.session_date_display }}){% endblock %}
+
+{% block heading %}Survey Session Details{% endblock %}
+
+{% block head_extra %}
+<style>
+  /* Conservative, professional styling */
+  .session-header-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+  }
+
+  .session-header-card .card-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem 1.25rem;
+  }
+
+  .session-title {
+    margin: 0;
+    color: #212529;
+    font-weight: 600;
+  }
+
+  .session-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+
+  .meta-item i {
+    color: #495057;
+  }
+
+  /* Stats cards - simple and clean */
+  .stats-row {
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 1rem;
+    text-align: center;
+    height: 100%;
+  }
+
+  .stat-card h6 {
+    color: #6c757d;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-card .stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0;
+  }
+
+  /* Findings section */
+  .findings-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+  }
+
+  .findings-card .card-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem 1.25rem;
+    font-weight: 600;
+  }
+
+  .findings-row {
+    padding: 1rem;
+  }
+
+  .finding-section {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .finding-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .finding-title {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .finding-badges .badge {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  /* Observations table */
+  .observations-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+  }
+
+  .observations-card .card-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem 1.25rem;
+    font-weight: 600;
+  }
+
+  .observations-table {
+    margin-bottom: 0;
+  }
+
+  .observations-table th {
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    color: #495057;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.75rem;
+  }
+
+  .observations-table td {
+    padding: 1rem 0.75rem;
+    vertical-align: top;
+    border-bottom: 1px solid #f1f3f4;
+  }
+
+  .observations-table tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  .plant-number {
+    font-weight: 600;
+    color: #495057;
+  }
+
+  .observation-time {
+    color: #6c757d;
+    font-size: 0.85rem;
+  }
+
+  .observation-badges .badge {
+    margin-right: 0.25rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.8rem;
+  }
+
+  .observation-notes {
+    color: #6c757d;
+    font-size: 0.9rem;
+    font-style: italic;
+    margin-top: 0.5rem;
+  }
+
+  /* Action buttons */
+  .action-buttons {
+    margin-top: 2rem;
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .action-buttons .btn {
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+  }
+
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    .session-meta {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .stats-row .col-6 {
+      margin-bottom: 0.75rem;
+    }
+
+    .findings-row .col-md-6 {
+      margin-bottom: 1rem;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .action-buttons .btn {
+      width: 100%;
+    }
+
+    /* Hide table on mobile, show simple cards */
+    .observations-table {
+      display: none;
+    }
+
+    .mobile-observations {
+      display: block;
+    }
+  }
+
+  @media (min-width: 769px) {
+    .mobile-observations {
+      display: none;
+    }
+  }
+
+  .mobile-observation-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .mobile-observation-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .no-observations {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Session Header -->
+<div class="session-header-card">
+  <div class="card-header">
+    <h4 class="session-title">{{ farm.name }} - Survey Session</h4>
+    <div class="session-meta">
+      <div class="meta-item">
+        <i class="bi bi-calendar3"></i>
+        <span>{{ session.session_date_display }}</span>
+      </div>
+      <div class="meta-item">
+        <i class="bi bi-clock"></i>
+        <span>{{ session.session_time_display }}{% if session.end_time_display %} - {{ session.end_time_display }}{% endif %}</span>
+      </div>
+      <div class="meta-item">
+        <i class="bi bi-person"></i>
+        <span>{{ session.surveyor.username }}</span>
+      </div>
+      <div class="meta-item">
+        <i class="bi bi-check-circle"></i>
+        <span class="badge bg-{{ session.get_status_badge_class }}">{{ session.get_status_display }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="stats-row">
+  <div class="row g-3">
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <h6>Observations</h6>
+        <div class="stat-value">{{ completed_count }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <h6>Duration</h6>
+        <div class="stat-value">{{ session.duration_display }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <h6>Target Plants</h6>
+        <div class="stat-value">{{ session.target_plants_surveyed|default:"No target" }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <h6>Progress</h6>
+        <div class="stat-value">
+          {% if session.target_plants_surveyed %}
+            {{ session.get_progress_percentage }}%
+          {% else %}
+            Complete
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Findings Summary -->
+<div class="findings-card">
+  <div class="card-header">
+    <i class="bi bi-bug me-2"></i>Survey Findings
+  </div>
+  <div class="findings-row">
+    <div class="row">
+      <div class="col-md-6">
+        <div class="finding-section">
+          <div class="finding-title">
+            <i class="bi bi-bug-fill text-danger"></i>
+            Pests Found ({{ unique_pests_count }})
+          </div>
+          <div class="finding-badges">
+            {% if unique_pests %}
+              {% for pest in unique_pests %}
+                <span class="badge bg-danger">{{ pest.name }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted">No pests detected</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="finding-section">
+          <div class="finding-title">
+            <i class="bi bi-virus text-warning"></i>
+            Diseases Found ({{ unique_diseases_count }})
+          </div>
+          <div class="finding-badges">
+            {% if unique_diseases %}
+              {% for disease in unique_diseases %}
+                <span class="badge bg-warning text-dark">{{ disease.name }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted">No diseases detected</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detailed Observations -->
+<div class="observations-card">
+  <div class="card-header">
+    <i class="bi bi-list-ul me-2"></i>Detailed Observations ({{ completed_count }})
+  </div>
+  
+  {% if observations %}
+    <!-- Desktop Table -->
+    <div class="table-responsive">
+      <table class="table observations-table">
+        <thead>
+          <tr>
+            <th>Plant #</th>
+            <th>Time</th>
+            <th>Pests Observed</th>
+            <th>Diseases Observed</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for obs in observations %}
+            <tr>
+              <td>
+                <div class="plant-number">Plant #{{ obs.plant_sequence_number }}</div>
+              </td>
+              <td>
+                <div class="observation-time">
+                  {{ obs.observation_time|date:"M j" }}<br>
+                  {{ obs.observation_time|date:"P" }}
+                </div>
+              </td>
+              <td>
+                <div class="observation-badges">
+                  {% if obs.pests_observed.all %}
+                    {% for pest in obs.pests_observed.all %}
+                      <span class="badge bg-danger">{{ pest.name }}</span>
+                    {% endfor %}
+                  {% else %}
+                    <span class="text-muted">None</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td>
+                <div class="observation-badges">
+                  {% if obs.diseases_observed.all %}
+                    {% for disease in obs.diseases_observed.all %}
+                      <span class="badge bg-warning text-dark">{{ disease.name }}</span>
+                    {% endfor %}
+                  {% else %}
+                    <span class="text-muted">None</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td>
+                {% if obs.notes %}
+                  <div class="observation-notes">{{ obs.notes|truncatewords:10 }}</div>
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Cards -->
+    <div class="mobile-observations p-3">
+      {% for obs in observations %}
+        <div class="mobile-observation-card">
+          <div class="mobile-observation-header">
+            <div class="plant-number">Plant #{{ obs.plant_sequence_number }}</div>
+            <div class="observation-time">{{ obs.observation_time|date:"M j, P" }}</div>
+          </div>
+          
+          <div class="mb-2">
+            <strong>Pests:</strong>
+            {% if obs.pests_observed.all %}
+              {% for pest in obs.pests_observed.all %}
+                <span class="badge bg-danger">{{ pest.name }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted">None</span>
+            {% endif %}
+          </div>
+
+          <div class="mb-2">
+            <strong>Diseases:</strong>
+            {% if obs.diseases_observed.all %}
+              {% for disease in obs.diseases_observed.all %}
+                <span class="badge bg-warning text-dark">{{ disease.name }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted">None</span>
+            {% endif %}
+          </div>
+
+          {% if obs.notes %}
+            <div class="observation-notes">
+              <strong>Notes:</strong> {{ obs.notes }}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <div class="no-observations">
+      <i class="bi bi-binoculars display-6 text-muted"></i>
+      <h5 class="text-muted">No Observations</h5>
+      <p class="text-muted">This session doesn't have any recorded observations.</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Action Buttons -->
+<div class="action-buttons">
+  <a href="{% url 'core:survey_session_list' farm.id %}" class="btn btn-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back to Sessions
+  </a>
+  
+  <a href="{% url 'core:start_survey_session' farm.id %}" class="btn btn-success">
+    <i class="bi bi-plus-circle me-1"></i>New Survey Session
+  </a>
+  
+  <a href="{% url 'core:farm_detail' farm.id %}" class="btn btn-primary">
+    <i class="bi bi-house-door me-1"></i>Farm Details
+  </a>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Session detail page loaded - conservative version");
+});
+</script>
+{% endblock %}
