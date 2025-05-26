@@ -133,15 +133,6 @@
                     <div class="col-6">
                         <div class="card h-100 farm-stat-card">
                             <div class="card-body p-3">
-                                <h6 class="card-subtitle mb-1 text-muted">Climate Zone</h6>
-                                <p class="card-text mb-0 fw-medium">{{ farm.region.climate_zone|default:"Not set" }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-6">
-                        <div class="card h-100 farm-stat-card">
-                            <div class="card-body p-3">
                                 <h6 class="card-subtitle mb-1 text-muted">Size</h6>
                                 <p class="card-text mb-0 fw-medium">{{ farm.size_hectares|default:"-" }} hectares</p>
                             </div>
@@ -156,11 +147,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <div class="col-md-6">
-                <div class="row g-3">
                     <div class="col-6">
                         <div class="card h-100 farm-stat-card">
                             <div class="card-body p-3">
@@ -169,8 +156,12 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="col-6">
+            <div class="col-md-6">
+                <div class="row g-3">
+                    <div class="col-12">
                         <div class="card h-100 farm-stat-card">
                             <div class="card-body p-3">
                                 <h6 class="card-subtitle mb-1 text-muted">Plant Type</h6>
@@ -181,23 +172,6 @@
                                         Not set
                                     {% endif %}
                                 </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Action Cards for Desktop -->
-                <div class="d-none d-md-block mt-3">
-                    <div class="card bg-light">
-                        <div class="card-body p-3">
-                            <h6 class="card-subtitle mb-2 text-muted">Quick Actions</h6>
-                            <div class="d-flex gap-2">
-                                <a href="{% url 'core:start_survey_session' farm.id %}" class="btn btn-primary btn-sm">
-                                    <i class="bi bi-play-circle me-1"></i> New Survey
-                                </a>
-                                <a href="{% url 'core:survey_session_list' farm.id %}" class="btn btn-outline-secondary btn-sm">
-                                    <i class="bi bi-list-ul me-1"></i> Past Sessions
-                                </a>
                             </div>
                         </div>
                     </div>
@@ -216,7 +190,7 @@
                 <small>(Based on current stage: <strong>{{ current_stage|default:"Unknown" }}</strong>)</small>
             </div>
             <a href="{% url 'core:calculator' %}?farm={{ farm.id }}" class="btn btn-sm btn-outline-light align-self-center">
-                <i class="bi bi-calculator"></i> Customize Confidence
+                <i class="bi bi-calculator"></i> Recalculate Surveillance
             </a>
         </div>
     </div>
@@ -227,9 +201,9 @@
             <!-- Mobile Main Stats - Simpler layout -->
             <div class="d-block d-md-none mb-4">
                 <div class="text-center mb-3">
-                    <h1 class="display-5 fw-bold text-success mb-0">{{ calculation_results.required_plants_to_survey }}</h1>
-                    <p class="mb-0">plants to inspect</p>
-                    <p class="text-muted small">({{ calculation_results.confidence_level_percent|default:95 }}% confidence)</p>
+                    <h1 class="display-5 fw-bold text-success mb-1">{{ calculation_results.required_plants_to_survey }}</h1>
+                    <p class="mb-0">Plants recommended to check</p>
+                    <p class="text-muted small">At {{ calculation_results.confidence_level_percent|default:95 }}% confidence level</p>
 
                     {% if calculation_results.percentage_of_total is not None %}
                         <div class="progress mt-2 mb-1 mx-auto" style="height: 8px; max-width: 200px;">
@@ -270,10 +244,8 @@
             <!-- Desktop Three Column Layout -->
             <div class="row d-none d-md-flex">
                 <div class="col-md-4">
-                    <div class="d-flex align-items-center mb-2">
-                        <h4 class="mb-0 me-2">{{ calculation_results.required_plants_to_survey }}</h4>
-                        <span class="text-muted">plants recommended to inspect (at {{ calculation_results.confidence_level_percent|default:95 }}% confidence)</span>
-                    </div>
+                    <h4 class="mb-0">Plants recommended to check: {{ calculation_results.required_plants_to_survey }}</h4>
+                    <p class="text-muted small mb-2">At {{ calculation_results.confidence_level_percent|default:95 }}% confidence level</p>
 
                     {% if calculation_results.percentage_of_total is not None %}
                         <div class="progress mb-2" style="height: 5px;">
@@ -290,7 +262,7 @@
                         {% for pest in priority_pests %}
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 {{ pest.name }}
-                                <span class="badge bg-danger rounded-pill">High Priority</span>
+                                <span class="badge bg-danger rounded-pill">Check</span>
                             </li>
                         {% endfor %}
                     </ul>
@@ -300,7 +272,7 @@
                         {% for disease in priority_diseases %}
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 {{ disease.name }}
-                                <span class="badge bg-warning text-dark rounded-pill">Check</span>
+                                <span class="badge bg-danger rounded-pill">Check</span>
                             </li>
                         {% empty %}
                             <li class="list-group-item text-muted small">No specific priority diseases for this stage/plant type.</li>
@@ -370,7 +342,7 @@
                                     {% for pest in priority_pests %}
                                         <li class="list-group-item d-flex justify-content-between align-items-center py-2">
                                             {{ pest.name }}
-                                            <span class="badge bg-danger rounded-pill">High Priority</span>
+                                            <span class="badge bg-danger rounded-pill">Check</span>
                                         </li>
                                     {% empty %}
                                         <li class="list-group-item text-muted small py-2">No specific priority pests for this stage.</li>
@@ -382,7 +354,7 @@
                                     {% for disease in priority_diseases %}
                                         <li class="list-group-item d-flex justify-content-between align-items-center py-2">
                                             {{ disease.name }}
-                                            <span class="badge bg-warning text-dark rounded-pill">Check</span>
+                                            <span class="badge bg-danger rounded-pill">Check</span>
                                         </li>
                                     {% empty %}
                                         <li class="list-group-item text-muted small py-2">No specific priority diseases for this stage.</li>
@@ -420,7 +392,7 @@
             <!-- Action Buttons -->
             <div class="d-none d-md-flex justify-content-between align-items-center">
                 <a href="{% url 'core:calculator' %}?farm={{ farm.id }}" class="btn btn-success">
-                    <i class="bi bi-calculator"></i> Customize Surveillance Plan
+                    <i class="bi bi-calculator"></i> Recalculate Surveillance
                 </a>
                 <a href="{% url 'core:start_survey_session' farm.id %}" class="btn btn-primary">
                     <i class="bi bi-play-circle me-1"></i> Start New Survey Session
@@ -437,7 +409,7 @@
                 </a>
                 <div class="d-flex gap-2">
                     <a href="{% url 'core:calculator' %}?farm={{ farm.id }}" class="btn btn-success flex-grow-1">
-                        <i class="bi bi-calculator"></i> Customize
+                        <i class="bi bi-calculator"></i> Recalculate
                     </a>
                     <a href="{% url 'core:survey_session_list' farm.id %}" class="btn btn-outline-secondary flex-grow-1">
                         <i class="bi bi-list-ul me-1"></i> Past Sessions
@@ -453,136 +425,6 @@
                         <i class="bi bi-pencil-square me-1"></i> Edit farm details
                     </a>
                 </div>
-            </div>
-        {% endif %}
-    </div>
-</div>
-
-<!-- Recent Survey Sessions Card -->
-<div class="card shadow mb-4">
-    <div class="card-header bg-light d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-        <h5 class="mb-0">Recent Survey Sessions</h5>
-        <a href="{% url 'core:survey_session_list' farm.id %}" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-list-ul me-1"></i> View All Sessions
-        </a>
-    </div>
-
-    <div class="card-body p-0">
-        <!-- Display In-Progress Session If Exists -->
-        {% if latest_in_progress %}
-        <div class="alert alert-warning m-3" role="alert">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="alert-heading mb-1">Unfinished Survey Session</h5>
-                    <p class="mb-0">Started: {{ latest_in_progress.start_time|date:"M d, Y, g:i A" }}</p>
-                    <p class="mb-0 small">
-                        {{ latest_in_progress.observation_count }} observation{{ latest_in_progress.observation_count|pluralize }} recorded
-                        {% if latest_in_progress.target_plants_surveyed %}
-                        ({{ latest_in_progress.get_progress_percentage }}% complete)
-                        {% endif %}
-                    </p>
-                </div>
-                <a href="{% url 'core:active_survey_session' latest_in_progress.session_id %}" class="btn btn-warning">
-                    <i class="bi bi-arrow-repeat me-1"></i> Resume Session
-                </a>
-            </div>
-        </div>
-        {% endif %}
-
-        {% if completed_sessions %}
-            <!-- Desktop Table View -->
-            <div class="table-responsive d-none d-md-block">
-                <table class="table table-striped table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Date</th>
-                            <th>Observations</th>
-                            <th>Duration</th>
-                            <th>Findings</th>
-                            <th class="text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for session in completed_sessions %}
-                        <tr>
-                            <td>{{ session.end_time|date:"Y-m-d" }}</td>
-                            <td>{{ session.observation_count }} observations</td>
-                            <td>{{ session.duration|default:"N/A" }} min</td>
-                            <td>
-                                {% with pest_count=session.get_unique_pests.count disease_count=session.get_unique_diseases.count %}
-                                    {% if pest_count > 0 or disease_count > 0 %}
-                                        <span class="badge bg-warning text-dark">
-                                            {% if pest_count > 0 %}{{ pest_count }} pest{{ pest_count|pluralize }}{% endif %}
-                                            {% if pest_count > 0 and disease_count > 0 %}, {% endif %}
-                                            {% if disease_count > 0 %}{{ disease_count }} disease{{ disease_count|pluralize }}{% endif %}
-                                        </span>
-                                    {% else %}
-                                        <span class="badge bg-success">No issues found</span>
-                                    {% endif %}
-                                {% endwith %}
-                            </td>
-                            <td class="text-end">
-                                <a href="{% url 'core:survey_session_detail' session.session_id %}" class="btn btn-outline-primary btn-sm">
-                                    <i class="bi bi-eye-fill me-1"></i> View
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Mobile Card View -->
-            <div class="d-md-none">
-                {% for session in completed_sessions %}
-                <div class="card border-0 border-bottom rounded-0">
-                    <div class="card-body pb-3 pt-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <span class="badge bg-primary">{{ session.observation_count }} observations</span>
-                            <span class="text-muted small">{{ session.end_time|date:"M d, Y" }}</span>
-                        </div>
-
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted small">Duration:</span>
-                            <span class="fw-medium">{{ session.duration|default:"N/A" }} min</span>
-                        </div>
-
-                        <div class="mb-2">
-                            <span class="text-muted small">Findings:</span>
-                            <div class="mt-1">
-                                {% with pest_count=session.get_unique_pests.count disease_count=session.get_unique_diseases.count %}
-                                    {% if pest_count > 0 or disease_count > 0 %}
-                                        <span class="badge bg-warning text-dark">
-                                            {% if pest_count > 0 %}{{ pest_count }} pest{{ pest_count|pluralize }}{% endif %}
-                                            {% if pest_count > 0 and disease_count > 0 %}, {% endif %}
-                                            {% if disease_count > 0 %}{{ disease_count }} disease{{ disease_count|pluralize }}{% endif %}
-                                        </span>
-                                    {% else %}
-                                        <span class="badge bg-success">No issues found</span>
-                                    {% endif %}
-                                {% endwith %}
-                            </div>
-                        </div>
-
-                        <div class="d-flex mt-2">
-                            <a href="{% url 'core:survey_session_detail' session.session_id %}" class="btn btn-sm btn-outline-primary w-100">
-                                <i class="bi bi-eye-fill me-1"></i> View Details
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        {% elif not latest_in_progress %}
-            <div class="card-body text-center py-4">
-                <div class="text-muted mb-3">
-                    <i class="bi bi-clipboard-data fs-1"></i>
-                </div>
-                <h5>No Survey Sessions Yet</h5>
-                <p class="text-muted">No survey sessions found for this farm yet.</p>
-                <a href="{% url 'core:start_survey_session' farm.id %}" class="btn btn-primary">
-                    <i class="bi bi-play-circle me-1"></i> Start First Survey Session
-                </a>
             </div>
         {% endif %}
     </div>
@@ -604,7 +446,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const boundaryData = {{ farm_boundary_json|safe }};
+    const boundaryData = {{ farm_boundary_json|safe|default:"null" }};
     const mapContainer = document.getElementById('mapContainer');
     const toggleMapBtn = document.getElementById('toggleMapBtn');
     const mobileToggleMapBtn = document.getElementById('mobileToggleMapBtn');
